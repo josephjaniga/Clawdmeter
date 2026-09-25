@@ -21,7 +21,32 @@ log() {
 }
 
 read_token() {
-    grep -o '"accessToken":"[^"]*"' "$HOME/.claude/.credentials.json" | cut -d'"' -f4
+    # Claude Code stores the OAuth token nested two ways: {"accessToken": ...}
+    # (legacy) or {"claudeAiOauth":{"accessToken": ...}} (current). A naive grep
+    # grabs the FIRST "accessToken" in the file, which is the MCP block's empty
+    # string. Use python3 to pull the real, non-empty claudeAiOauth token.
+    python3 - "$HOME/.claude/.credentials.json" <<'PY'
+import json, sys, re
+raw = open(sys.argv[1]).read()
+try:
+    d = json.loads(raw)
+except Exception:
+    d = {}
+# current layout: nested under claudeAiOauth
+oa = d.get("claudeAiOauth")
+if isinstance(oa, dict):
+    t = oa.get("accessToken") or oa.get("access_token")
+    if t:
+        print(t); sys.exit(0)
+# legacy: top-level accessToken (must be non-empty)
+t = d.get("accessToken") or d.get("access_token")
+if t:
+    print(t); sys.exit(0)
+# last resort: first non-empty accessToken anywhere
+m = re.search(r'"claudeAiOauth"\s*:\s*\{[^}]*"accessToken"\s*:\s*"([^"]+)"', raw)
+if m and m.group(1):
+    print(m.group(1))
+PY
 }
 
 # Convert MAC to D-Bus path: AA:BB:CC:DD:EE:FF -> dev_AA_BB_CC_DD_EE_FF

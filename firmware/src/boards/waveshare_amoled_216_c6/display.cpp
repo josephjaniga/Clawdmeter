@@ -34,7 +34,7 @@ static void send_vendor_init(Arduino_DataBus* b) {
     b->writeC8D8(0x1C, 0xA0);    // panel driving
     b->writeC8D8(0xFE, 0x00);    // back to user command page
     b->writeC8D8(0xC4, 0x80);    // SPI mode control
-    b->writeC8D8(0x36, 0x30);    // MADCTL (BSP value)
+    b->writeC8D8(0x36, 0x00);    // MADCTL: 90° CW (clear MV) — was 0x30
     b->writeC8D8(0x53, 0x20);    // CTRL display 1 (brightness control on)
     b->writeC8D8(0x51, 0xFF);    // brightness = max
     b->writeC8D8(0x63, 0xFF);    // HBM brightness = max
